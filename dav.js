@@ -298,6 +298,70 @@ Dav.prototype = function () {
         });
     };
 
+    self.MOVE = function () {
+        self.request({
+            type: 'MOVE',
+            path: path,
+            headers: {
+
+            },
+            handler: function (stat, statstr, cont) {
+
+            }
+        });
+    };
+
+    self.COPY = function (path, topath, ok, err) {
+        self.request({
+            type: 'COPY',
+            path: path,
+            headers: {
+
+            },
+            handler: function (stat, statstr, cont) {
+
+            }
+        });
+    };
+
+    self.MKCOL = function () {
+        self.request({
+            type: 'MKCOL',
+            path: path,
+            headers: {
+
+            },
+            handler: function (stat, statstr, cont) {
+
+            }
+        });
+    };
+
+    self.LOCK = function () {
+        self.request({
+            type: 'LOCK',
+            path: path,
+            headers: {
+
+            },
+            handler: function (stat, statstr, cont) {
+
+            }
+        });
+    };
+
+    self.UNLOCK = function () {
+        self.request({
+            type: 'UNLOCK',
+            headers: {
+
+            },
+            handler: function (stat, statstr, cont) {
+
+            }
+        });
+    };
+
     self.MERGE = function (ok, err) {
         self.request({
             type: 'MERGE',
