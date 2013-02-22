@@ -13,9 +13,6 @@ var STATUS_CODES = {
   '202': 'Accepted',
   '203': 'None-Authoritive Information',
   '204': 'No Content',
-  // seems that there's some bug in IE (or Sarissa?) that 
-  // makes it spew out '1223' status codes when '204' is
-  // received... needs some investigation later on
   '1223': 'No Content',
   '205': 'Reset Content',
   '206': 'Partial Content',
@@ -58,7 +55,9 @@ var STATUS_CODES = {
 };
 Dav.prototype = function () {
     var self = {};
+
     self.constructor = Dav;
+
     self.request = function (options) {
         var xhr = self._getXMLHttp();
         xhr.onreadystatechange = function () {
@@ -79,9 +78,7 @@ Dav.prototype = function () {
             }
         xhr.send(options.content);
     };
-    self._parseMultiStatus = function (txt) {
-        
-    };
+    
     self._getXMLHttp = function () {
         var methods = [
             function () {
@@ -98,7 +95,8 @@ Dav.prototype = function () {
             } catch(e) { }
         }
         throw new Error('Your browser not supported XMLHttpRequest');
-    },
+    };
+
     self.OPTIONS = function (ok, err) {
         self.request({
             type: 'OPTIONS',
@@ -206,7 +204,7 @@ Dav.prototype = function () {
             handler: function (stat, statstr, cont) {
                 if (stat == '201') {
                     self.log('##### CHECKOUT ' + path + ' success #####');
-                    var rwbl = /<\w+>([^<]+)</\w+>/;
+                    var rwbl = /<\w+>([^<]+)<\/\w+>/;
                     var info = cont.match(rwbl)[1];
                     self.wbl = info.replace(/^Checked-out resource /, '')
                                    .replace(/ has been created\.$/, '');
