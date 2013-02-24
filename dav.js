@@ -1,4 +1,5 @@
-var Dav = function (auth, basepath) {
+var Dav = function (auth, basepath, log) {
+    this.log = log;
     this.auth = auth;
     this.basepath = basepath;
     this.uniqueKey = this._getUniqueKey();
@@ -130,10 +131,10 @@ Dav.prototype = function () {
             ].join('')
         });
     };
-    self.PROPFIND = function (ok, err) {
+    self.PROPFIND = function (path, handler) {
         self.request({
             type: 'PROPFIND',
-            path: self.basepath,
+            path: path,
             headers: {
                 'Depth': 0,
                 'Content-type': 'text/xml;charset=utf-8',
@@ -145,22 +146,19 @@ Dav.prototype = function () {
                 '</D:propfind>'
             ].join(''),
             handler: function (stat, statstr, cont) {
+                self.log('##### PROPFIND request #####', 1);
+                self.log(stat + ' ' + statstr, 1);
+                
                 if (stat == '207') {
-                    self.log('##### PROPFIND request success #####');
                     var rvcc = new RegExp([
                         'version-controlled-configuration>',
                         '<D:href>([^<]+)<\\/D:href>'
                     ].join(''));
                     self.vcc = cont.match(rvcc)[1];
                     self.log('version-conctrolled-configuratoin: ' + self.vcc);
-                    self.log('##### PROPFIND INFO END #####');
-                    ok && ok(stat, statstr, cont);
-                } else {
-                    self.log('##### PROPFIND request fail #####', 1);
-                    self.log(stat + ' ' + statstr, 1);
-                    self.log('##### PROPFIND INFO END #####', 1);
-                    err && err(stat, statstr, cont);
                 }
+                handler(stat, statstr, cont);
+                self.log('##### PROPFIND INFO END #####');
             }
         });
     };
@@ -221,7 +219,7 @@ Dav.prototype = function () {
         });
     };
 
-    self.PROPPATCH = function (info, ok, err) {
+    self.PROPPATCH = function (ok, err) {
         self.request({
             type: 'PROPPATCH',
             path: self.wbl,
@@ -237,7 +235,7 @@ Dav.prototype = function () {
                 ' xmlns:C="http://subversion.tigris.org/xmlns/custom/"', 
                 ' xmlns:S="http://subversion.tigris.org/xmlns/svn/">',
                 '<D:set><D:prop>',
-                '<S:log >', info, '</S:log>',
+                '<S:log >', self.log, '</S:log>',
                 '</D:prop></D:set></D:propertyupdate>'
             ].join(''),
             handler: function (stat, statstr, cont) {
