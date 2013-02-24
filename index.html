@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset='utf-8' />
+  <title> HOME PAGE </title>
+</head>
+
+<body>
+  <button type='button' id='btn'>test</button>
+  <script type='text/javascript' src='dav.js'></script>
+  <script type='text/javascript'>
+    var btn = document.getElementById('btn');
+    btn.onclick = function () {
+      var auth = btoa('fon:fon9017');
+      var webdav = new Dav(auth, '/svn/webdav/trunk',
+                           'add 123.js');
+      var svn = {
+          options: function () {
+              webdav.OPTIONS(function () {
+                  webdav.PROPFIND(webdav.basepath, function (stat) {
+                      if(stat == '207')
+                          svn.mkactivity();
+                      else
+                          webdav.log('##### END #####', 1);
+                  });
+              });
+          },
+          mkactivity: function () {
+              webdav.MKACTIVITY(function () {
+                  webdav.CHECKOUT(webdav.vcc, webdav.act, function () {
+                      svn.proppatch();
+                  });
+              });
+          },
+          proppatch: function () {
+              webdav.PROPPATCH(function () {
+                  webdav.CHECKOUT(webdav.ci, webdav.act, function () {
+                      webdav.PUT(webdav.co + '123.js', 'SVNtxt',
+                                 function () {
+                          webdav.merge(); 
+                      });
+                  });
+              });
+          },
+          merge: function () {
+              webdav.MERGE(function () {
+                  webdav.log('All done!!');
+              });
+          }
+      };
+
+      svn.options();
+    };
+  </script>
+</body>
+</html>

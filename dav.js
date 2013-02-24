@@ -1,8 +1,7 @@
 var Dav = function (auth, basepath, log) {
-    this.log = log;
-    this.auth = auth;
+    this.loginfo = log;
+    this.auth = 'Basic ' + auth;
     this.basepath = basepath;
-    this.uniqueKey = this._getUniqueKey();
 };
 
 var STATUS_CODES = {
@@ -54,12 +53,10 @@ var STATUS_CODES = {
   '505': 'HTTP Version not supported',
   '507': 'Insufficient Storage'
 };
-Dav.prototype = function () {
-    var self = {};
+Dav.prototype = {
 
-    self.constructor = Dav;
-
-    self.request = function (options) {
+    request : function (options) {
+        var self = this;
         var xhr = self._getXMLHttp();
         xhr.onreadystatechange = function () {
             if (xhr.readyState == 4) {
@@ -78,9 +75,10 @@ Dav.prototype = function () {
                 xhr.setRequestHeader(key, val);
             }
         xhr.send(options.content);
-    };
+    },
     
-    self._getXMLHttp = function () {
+    _getXMLHttp : function () {
+        var self = this;
         var methods = [
             function () {
                 return new XMLHttpRequest();
@@ -96,12 +94,13 @@ Dav.prototype = function () {
             } catch(e) { }
         }
         throw new Error('Your browser not supported XMLHttpRequest');
-    };
+    },
 
-    self.OPTIONS = function (ok, err) {
+    OPTIONS : function (ok, err) {
+        var self = this;
         self.request({
             type: 'OPTIONS',
-            path: self.basepath,
+            path: this.basepath,
             headers: {
                 'Content-type': 'text/xml;charset=utf-8',
                 'Accept-Encoding': 'gzip'
@@ -114,6 +113,7 @@ Dav.prototype = function () {
                         '<D:href>([^<]+)<\\/D:href>'
                     ].join(''));
                     self.act = cont.match(ract)[1];
+                    self.uniqueKey = self._getUniqueKey();
                     self.log('Acitivity path is: ' + self.act);
                     ok && ok(stat, statstr, cont);
                 } else {
@@ -130,8 +130,10 @@ Dav.prototype = function () {
                 '</D:options>'
             ].join('')
         });
-    };
-    self.PROPFIND = function (path, handler) {
+    },
+
+    PROPFIND : function (path, handler) {
+        var self = this;
         self.request({
             type: 'PROPFIND',
             path: path,
@@ -142,28 +144,33 @@ Dav.prototype = function () {
             },
             content: [
                 '<?xml version="1.0" encoding="utf-8"?>',
-                '<D:propfind xmlns="DAV:"><D:allprop />',
+                '<D:propfind xmlns:D="DAV:"><D:allprop />',
                 '</D:propfind>'
             ].join(''),
             handler: function (stat, statstr, cont) {
-                self.log('##### PROPFIND request #####', 1);
-                self.log(stat + ' ' + statstr, 1);
+                self.log('##### PROPFIND request #####');
+                self.log(stat + ' ' + statstr);
                 
                 if (stat == '207') {
                     var rvcc = new RegExp([
                         'version-controlled-configuration>',
                         '<D:href>([^<]+)<\\/D:href>'
                     ].join(''));
+                    var rci = new RegExp(
+                        ':checked-in><D:href>([^<]+)<\\/D:href>');
                     self.vcc = cont.match(rvcc)[1];
+                    self.ci = cont.match(rci)[1];
+                    self.log('checked-in: ' + self.ci);
                     self.log('version-conctrolled-configuratoin: ' + self.vcc);
                 }
                 handler(stat, statstr, cont);
                 self.log('##### PROPFIND INFO END #####');
             }
         });
-    };
+    },
 
-    self.MKACTIVITY = function (ok, err) {
+    MKACTIVITY : function (ok, err) {
+        var self = this;
         self.request({
             type: 'MKACTIVITY',
             path: self.act + self.uniqueKey,
@@ -179,32 +186,35 @@ Dav.prototype = function () {
                     ok && ok(stat, statstr, cont);
                 } else {
                     self.log('##### MKACTIVITY request fail #####', 1);
+                    self.log(stat + ' ' + statstr, 1);
                     err && err(stat, statstr, cont);
                 }
             }
         });
-    };
+    },
 
-    self.CHECKOUT = function (path, actpath, ok, err) {
+    CHECKOUT : function (path, actpath, ok, err) {
+        var self = this;
         self.request({
             type: 'CHECKOUT',
             path: path,
             headers: {
                 'Accept-Encoding': 'gzip',
-                'Authorization': self.auth
+                'Authorization': self.auth,
+                'Content-type': 'text/xml;charset=utf-8'
             },
             content: [
                 '<?xml version="1.0" encoding="utf-8"?>',
                 '<D:checkout xmlns:D="DAV:">',
-                '<D:activity-set><D:href>', atcpath, '</D:href>',
+                '<D:activity-set><D:href>', actpath, '</D:href>',
                 '</D:activity-set><D:apply-to-version/></D:checkout>'
             ].join(''),
             handler: function (stat, statstr, cont) {
                 if (stat == '201') {
                     self.log('##### CHECKOUT ' + path + ' success #####');
-                    var rwbl = /<\w+>([^<]+)<\/\w+>/;
-                    var info = cont.match(rwbl)[1];
-                    self.wbl = info.replace(/^Checked-out resource /, '')
+                    var rco = /<\w+>(Checked-out [^<]+)<\/\w+>/;
+                    var info = cont.match(rco)[1];
+                    self.co = info.replace(/^Checked-out resource /, '')
                                    .replace(/ has been created\.$/, '');
                     self.log(info);
                     self.log('#### CHECKOUT INFO END #####');
@@ -213,16 +223,18 @@ Dav.prototype = function () {
                     self.log('##### CHECKOUT ' + path + ' fail #####', 1);
                     self.log(stat + ' ' + statstr, 1);
                     self.log('#### CHECKOUT INFO END #####');
+                    self.rmact();
                     err && err(stat, statstr, cont);
                 }
             }
         });
-    };
+    },
 
-    self.PROPPATCH = function (ok, err) {
+    PROPPATCH : function (ok, err) {
+        var self = this;
         self.request({
             type: 'PROPPATCH',
-            path: self.wbl,
+            path: self.co,
             headers: {
                 'Content-type': 'text/xml;charset=utf-8',
                 'Accept-Encoding': 'gzip',
@@ -235,7 +247,7 @@ Dav.prototype = function () {
                 ' xmlns:C="http://subversion.tigris.org/xmlns/custom/"', 
                 ' xmlns:S="http://subversion.tigris.org/xmlns/svn/">',
                 '<D:set><D:prop>',
-                '<S:log >', self.log, '</S:log>',
+                '<S:log >', self.loginfo, '</S:log>',
                 '</D:prop></D:set></D:propertyupdate>'
             ].join(''),
             handler: function (stat, statstr, cont) {
@@ -246,12 +258,15 @@ Dav.prototype = function () {
                     self.log('##### PROPPATCH fail #####', 1);
                     self.log(stat + ' ' + statstr, 1);
                     self.log('##### PROPPATCH INFO END #####', 1);
+                    self.rmact();
+                    err && err(stat, statstr, cont);
                 }
             }
         });
-    };
+    },
 
-    self.PUT = function (path, content, ok, err) {
+    PUT : function (path, content, ok, err) {
+        var self = this;
         self.request({
             type: 'PUT',
             path: path,
@@ -269,12 +284,15 @@ Dav.prototype = function () {
                     self.log('##### PUT ' + path + ' fail #####', 1);
                     self.log(stat + ' ' + statstr, 1);
                     self.log('##### PUT INFO END #####', 1);
+                    self.rmact();
+                    err && err(stat, statstr, cont);
                 }
             }
         });
-    };
+    },
 
-    self.DELETE = function (path, ok, err) {
+    DELETE : function (path, ok, err) {
+        var self = this;
         self.request({
             type: 'DELETE',
             path: path,
@@ -289,12 +307,14 @@ Dav.prototype = function () {
                     self.log('##### DELETE ' + path + ' fail #####', 1);
                     self.log(stat + ' ' + statstr, 1);
                     self.log('##### DELETE INFO END #####', 1);
+                    err && err(stat, statstr, cont);
                 }
             }
         });
-    };
+    },
 
-    self.MOVE = function () {
+    MOVE : function () {
+        var self = this;
         self.request({
             type: 'MOVE',
             path: path,
@@ -305,9 +325,10 @@ Dav.prototype = function () {
 
             }
         });
-    };
+    },
 
-    self.COPY = function (path, topath, ok, err) {
+    COPY : function (path, topath, ok, err) {
+        var self = this;
         self.request({
             type: 'COPY',
             path: path,
@@ -318,9 +339,10 @@ Dav.prototype = function () {
 
             }
         });
-    };
+    },
 
-    self.MKCOL = function () {
+    MKCOL : function () {
+        var self = this;
         self.request({
             type: 'MKCOL',
             path: path,
@@ -331,9 +353,10 @@ Dav.prototype = function () {
 
             }
         });
-    };
+    },
 
-    self.LOCK = function () {
+    LOCK : function () {
+        var self = this;
         self.request({
             type: 'LOCK',
             path: path,
@@ -344,9 +367,10 @@ Dav.prototype = function () {
 
             }
         });
-    };
+    },
 
-    self.UNLOCK = function () {
+    UNLOCK : function () {
+        var self = this;
         self.request({
             type: 'UNLOCK',
             headers: {
@@ -356,9 +380,10 @@ Dav.prototype = function () {
 
             }
         });
-    };
+    },
 
-    self.MERGE = function (ok, err) {
+    MERGE : function (ok, err) {
+        var self = this;
         self.request({
             type: 'MERGE',
             path: self.act + self.uniqueKey,
@@ -380,55 +405,63 @@ Dav.prototype = function () {
             handler: function (stat, statstr, cont) {
                 if (stat == '200') {
                     self.log('##### MERGE done #####');
-                    ok && ok(stat, statstr, cont);
+                    self.rmact(ok);
                 } else {
                     self.log('##### MERGE fail #####', 1);
                     self.log(stat + ' ' + statstr, 1);
                     self.log('##### MERGE INFO END #####', 1);
                     err && err(stat, statstr, cont);
+                    self.rmact();
                 }
             }
         });
-    };
+    },
 
-    self._getUniqueKey = function () {
+    rmact : function (callback) {
+        var self = this;
+        self.DELETE(self.act + self.uniqueKey,
+                    function (stat, statstr, cont) {
+            callback && callback(stat, statstr, cont);
+        });
+    },
+
+    _getUniqueKey : function () {
         var key = [];
         var lens = [8, 4, 4, 4, 12];
         for (var i = 0; i < 5; i++) {
             var len = lens[i];
             var arr = [];
             for (var j = 0; j < len; j++)
-                arr.push(self._getRandomChar());
+                arr.push(this._getRandomChar());
             key.push(arr.join(''));
         }
         return key.join('-');
-    };
+    },
 
-    self._getRandomChar = function () {
+    _getRandomChar : function () {
         var source = '0123456789abcdefghijklmnopqrstuvwxyz';
         return source.charAt(
             Math.round(
                 Math.random() * 36)
         );
-    };
+    },
 
-    self.log = function (str, bad) {
+    log : function (str, bad) {
         var color = bad ? 'red' : 'green';
         var txtnode = document.createElement('p');
         txtnode.style.color = color;
         txtnode.innerHTML = str;
         Dav.console.appendChild(txtnode);
-    };
-
-    return self;
-}();
+    }
+};
 
 !function () {
     var div = Dav.console = document.createElement('div');
     div.style.cssText = [
         'position:fixed;z-index:999999;overflow-y:auto;width:500px;',
         'left:50%;padding:10px;margin-left:-250px;background:#111;',
-        'border-radius:10px;box-shadow:0 0 10px #999;display:none;'
+        'border-radius:10px;box-shadow:0 0 10px #999;font-family:monaco;',
+        'font-size:14px;height:', document.documentElement.clientHeight, 'px;'
     ].join('');
-    document.appendChild(div);
+    document.body.appendChild(div);
 }();
