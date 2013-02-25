@@ -102,12 +102,11 @@ Dav.prototype = {
             type: 'OPTIONS',
             path: this.basepath,
             headers: {
-                'Content-type': 'text/xml;charset=utf-8',
-                'Accept-Encoding': 'gzip'
+                'Content-type': 'text/xml;charset=utf-8'
             },
             handler: function (stat, statstr, cont) {
                 if (stat == '200') {
-                    self.log('##### OPTIONS request success #####');
+                    self.log('OPTIONS request success');
                     var ract = new RegExp([
                         '<D:activity-collection-set>',
                         '<D:href>([^<]+)<\\/D:href>'
@@ -117,9 +116,9 @@ Dav.prototype = {
                     self.log('Acitivity path is: ' + self.act);
                     ok && ok(stat, statstr, cont);
                 } else {
-                    self.log('##### OPTIONS request fail #####', 1);
+                    self.log('OPTIONS request fail', 1);
                     self.log(stat + ' ' + statstr, 1);
-                    self.log('##### OPTIONS INFO END #####', 1);
+                    self.log('OPTIONS INFO END', 1);
                     err && err(stat, statstr, cont);
                 }
             },
@@ -139,8 +138,7 @@ Dav.prototype = {
             path: path,
             headers: {
                 'Depth': 0,
-                'Content-type': 'text/xml;charset=utf-8',
-                'Accept-Encoding': 'gzip'
+                'Content-type': 'text/xml;charset=utf-8'
             },
             content: [
                 '<?xml version="1.0" encoding="utf-8"?>',
@@ -148,7 +146,7 @@ Dav.prototype = {
                 '</D:propfind>'
             ].join(''),
             handler: function (stat, statstr, cont) {
-                self.log('##### PROPFIND request #####');
+                self.log('PROPFIND request');
                 self.log(stat + ' ' + statstr);
                 
                 if (stat == '207') {
@@ -175,17 +173,16 @@ Dav.prototype = {
             type: 'MKACTIVITY',
             path: self.act + self.uniqueKey,
             headers: {
-                'Accept-Encoding': 'gzip',
                 'Authorization': self.auth
             },
             handler: function (stat, statstr, cont) {
                 if (stat == '201') {
-                    self.log('##### MKACTIVITY request success #####');
+                    self.log('MKACTIVITY request success');
                     self.log('Activity ' + self.act + self.uniqueKey);
-                    self.log('##### MKACTIVITY INFO END #####');
+                    self.log('MKACTIVITY INFO END');
                     ok && ok(stat, statstr, cont);
                 } else {
-                    self.log('##### MKACTIVITY request fail #####', 1);
+                    self.log('MKACTIVITY request fail', 1);
                     self.log(stat + ' ' + statstr, 1);
                     err && err(stat, statstr, cont);
                 }
@@ -198,11 +195,6 @@ Dav.prototype = {
         self.request({
             type: 'CHECKOUT',
             path: path,
-            headers: {
-                'Accept-Encoding': 'gzip',
-                'Authorization': self.auth,
-                'Content-type': 'text/xml;charset=utf-8'
-            },
             content: [
                 '<?xml version="1.0" encoding="utf-8"?>',
                 '<D:checkout xmlns:D="DAV:">',
@@ -211,18 +203,18 @@ Dav.prototype = {
             ].join(''),
             handler: function (stat, statstr, cont) {
                 if (stat == '201') {
-                    self.log('##### CHECKOUT ' + path + ' success #####');
+                    self.log('CHECKOUT ' + path + ' success');
                     var rco = /<\w+>(Checked-out [^<]+)<\/\w+>/;
                     var info = cont.match(rco)[1];
                     self.co = info.replace(/^Checked-out resource /, '')
                                    .replace(/ has been created\.$/, '');
                     self.log(info);
-                    self.log('#### CHECKOUT INFO END #####');
+                    self.log('CHECKOUT INFO END');
                     ok && ok(stat, statstr, cont);
                 } else {
-                    self.log('##### CHECKOUT ' + path + ' fail #####', 1);
+                    self.log('CHECKOUT ' + path + ' fail', 1);
                     self.log(stat + ' ' + statstr, 1);
-                    self.log('#### CHECKOUT INFO END #####');
+                    self.log('CHECKOUT INFO END');
                     self.rmact();
                     err && err(stat, statstr, cont);
                 }
@@ -237,7 +229,6 @@ Dav.prototype = {
             path: self.co,
             headers: {
                 'Content-type': 'text/xml;charset=utf-8',
-                'Accept-Encoding': 'gzip',
                 'Authorization': self.auth
             },
             content: [
@@ -252,12 +243,12 @@ Dav.prototype = {
             ].join(''),
             handler: function (stat, statstr, cont) {
                 if (stat == '207') {
-                    self.log('##### PROPPATCH success #####');
+                    self.log('PROPPATCH success');
                     ok && ok(stat, statstr, cont);
                 } else {
-                    self.log('##### PROPPATCH fail #####', 1);
+                    self.log('PROPPATCH fail', 1);
                     self.log(stat + ' ' + statstr, 1);
-                    self.log('##### PROPPATCH INFO END #####', 1);
+                    self.log('PROPPATCH INFO END', 1);
                     self.rmact();
                     err && err(stat, statstr, cont);
                 }
@@ -271,19 +262,18 @@ Dav.prototype = {
             type: 'PUT',
             path: path,
             headers: {
-                'Content-type': 'application/vnd.svn-svndiff',
-                'Authorization': self.auth,
-                'Accept-Encoding': 'gzip'
+                'Content-type': 'text/plain',
+                'Authorization': self.auth
             },
-            content: self._parse2svndiff(content),
+            content: content,
             handler: function (stat, statstr, cont) {
-                if (stat == '201') {
-                    self.log('##### PUT ' + path + ' success #####');
-                    ok && ok(stat, statstr, cont);
+                if (stat >= 200 && stat < 300) {
+                    self.log('PUT ' + path + ' success');
+                    ok && ok(stat, stat, statstr, cont);
                 } else {
-                    self.log('##### PUT ' + path + ' fail #####', 1);
+                    self.log('PUT ' + path + ' fail', 1);
                     self.log(stat + ' ' + statstr, 1);
-                    self.log('##### PUT INFO END #####', 1);
+                    self.log('PUT INFO END', 1);
                     self.rmact();
                     err && err(stat, statstr, cont);
                 }
@@ -301,12 +291,13 @@ Dav.prototype = {
             },
             handler: function (stat, statstr, cont) {
                 if (stat == '204') {
-                    self.log('##### DELETE ' + path + ' done #####');
+                    self.log('DELETE ' + path + ' done');
                     ok && ok(stat, statstr, cont);
                 } else {
-                    self.log('##### DELETE ' + path + ' fail #####', 1);
+                    var loginfo = {};
+                    self.log('DELETE ' + path + ' fail', 1);
                     self.log(stat + ' ' + statstr, 1);
-                    self.log('##### DELETE INFO END #####', 1);
+                    self.log('DELETE INFO END', 1);
                     err && err(stat, statstr, cont);
                 }
             }
@@ -390,7 +381,6 @@ Dav.prototype = {
             headers: {
                 'X-SVN-Options': 'release-locks',
                 'Content-type': 'text/xml;charset=utf-8',
-                'Accept-Encoding': 'gzip',
                 'Authorization': self.auth
             },
             content: [
@@ -404,12 +394,13 @@ Dav.prototype = {
             ].join(''),
             handler: function (stat, statstr, cont) {
                 if (stat == '200') {
-                    self.log('##### MERGE done #####');
+                    self.log('MERGE done');
                     self.rmact(ok);
                 } else {
-                    self.log('##### MERGE fail #####', 1);
+                    var loginfo = {};
+                    self.log('MERGE fail',  1);
                     self.log(stat + ' ' + statstr, 1);
-                    self.log('##### MERGE INFO END #####', 1);
+                    self.log('##### MERGE INFO END', 1);
                     err && err(stat, statstr, cont);
                     self.rmact();
                 }
@@ -447,21 +438,38 @@ Dav.prototype = {
     },
 
     log : function (str, bad) {
-        var color = bad ? 'red' : 'green';
+        var color = bad ? 'red' : 'rgb(23, 199, 23)';
         var txtnode = document.createElement('p');
+        var date = new Date();
+        var time = [
+            date.getHours(),
+            date.getMinutes(),
+            date.getSeconds()
+        ].join(':');
         txtnode.style.color = color;
-        txtnode.innerHTML = str;
+        txtnode.innerHTML = time + ' ==> ' + str;
         Dav.console.appendChild(txtnode);
     }
 };
 
+Dav.showLog = function () {
+    Dav.console.style.display = 'block';
+};
+
 !function () {
     var div = Dav.console = document.createElement('div');
+    var h = document.documentElement.clientHeight - 100;
     div.style.cssText = [
         'position:fixed;z-index:999999;overflow-y:auto;width:500px;',
         'left:50%;padding:10px;margin-left:-250px;background:#111;',
         'border-radius:10px;box-shadow:0 0 10px #999;font-family:monaco;',
-        'font-size:14px;height:', document.documentElement.clientHeight, 'px;'
+        'font-size:12px;height:', h, 'px;display:none;'
     ].join('');
+    var btn = document.createElement('button');
+    btn.innerHTML = 'Hide';
+    div.appendChild(btn);
+    btn.onclick = function () {
+        div.style.display = 'none';
+    };
     document.body.appendChild(div);
 }();

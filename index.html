@@ -12,7 +12,7 @@
     var btn = document.getElementById('btn');
     btn.onclick = function () {
       var auth = btoa('fon:fon9017');
-      var webdav = new Dav(auth, '/svn/webdav/trunk',
+      var webdav = new Dav(auth, '/repos/webdav/trunk',
                            'add 123.js');
       var svn = {
           options: function () {
@@ -27,17 +27,19 @@
           },
           mkactivity: function () {
               webdav.MKACTIVITY(function () {
-                  webdav.CHECKOUT(webdav.vcc, webdav.act, function () {
+                  webdav.CHECKOUT(webdav.vcc, webdav.act + webdav.uniqueKey,
+                                  function () {
                       svn.proppatch();
                   });
               });
           },
           proppatch: function () {
               webdav.PROPPATCH(function () {
-                  webdav.CHECKOUT(webdav.ci, webdav.act, function () {
-                      webdav.PUT(webdav.co + '123.js', 'SVNtxt',
+                  webdav.CHECKOUT(webdav.ci, webdav.act + webdav.uniqueKey, function () {
+                      webdav.PUT(webdav.co + '/123.js',
+                                'test svn put',
                                  function () {
-                          webdav.merge(); 
+                          svn.merge(); 
                       });
                   });
               });
@@ -50,6 +52,24 @@
       };
 
       svn.options();
+    };
+
+    var svn = {
+        add: function () {
+
+        },
+        rm: function () {
+
+        },
+        mv: function () {
+
+        },
+        cp: function () {
+
+        },
+        mkdir: function () {
+
+        }
     };
   </script>
 </body>
