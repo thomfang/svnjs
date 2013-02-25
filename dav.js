@@ -190,8 +190,9 @@ Dav.prototype = {
         });
     },
 
-    CHECKOUT : function (path, actpath, ok, err) {
+    CHECKOUT : function (path, ok, err) {
         var self = this;
+        var actpath = self.act + self.uniqueKey;
         self.request({
             type: 'CHECKOUT',
             path: path,
@@ -304,16 +305,18 @@ Dav.prototype = {
         });
     },
 
-    MOVE : function () {
+    MOVE : function (path, topath, handler) {
         var self = this;
         self.request({
             type: 'MOVE',
             path: path,
             headers: {
-
+                'Destination': topath,
+                'Overwrite': 'F',
+                'Authorization': self.auth
             },
             handler: function (stat, statstr, cont) {
-
+                
             }
         });
     },
@@ -324,7 +327,9 @@ Dav.prototype = {
             type: 'COPY',
             path: path,
             headers: {
-
+                'Destination': topath,
+                'Overwrite': 'F',
+                'Authorization': self.auth
             },
             handler: function (stat, statstr, cont) {
 
@@ -338,7 +343,7 @@ Dav.prototype = {
             type: 'MKCOL',
             path: path,
             headers: {
-
+                'Authorization': self.auth
             },
             handler: function (stat, statstr, cont) {
 
@@ -441,14 +446,18 @@ Dav.prototype = {
         var color = bad ? 'red' : 'rgb(23, 199, 23)';
         var txtnode = document.createElement('p');
         var date = new Date();
-        var time = [
+        var time = this._getTime();
+        txtnode.style.color = color;
+        txtnode.innerHTML = time + ' ==> ' + str;
+        Dav.console.appendChild(txtnode);
+    },
+    _getTime: function () {
+        var date = new Date();
+        return [
             date.getHours(),
             date.getMinutes(),
             date.getSeconds()
         ].join(':');
-        txtnode.style.color = color;
-        txtnode.innerHTML = time + ' ==> ' + str;
-        Dav.console.appendChild(txtnode);
     }
 };
 
