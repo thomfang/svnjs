@@ -257,8 +257,9 @@ Dav.prototype = {
         });
     },
 
-    PUT : function (path, content, ok, err) {
+    PUT : function (file, content, ok, err) {
         var self = this;
+        var path = self.co + '/' + file;
         self.request({
             type: 'PUT',
             path: path,
@@ -282,8 +283,10 @@ Dav.prototype = {
         });
     },
 
-    DELETE : function (path, ok, err) {
+    DELETE : function (file, ok, err) {
         var self = this;
+        var path = typeof file == 'string' ? self.co + '/' + file :
+                                             file.join('');
         self.request({
             type: 'DELETE',
             path: path,
@@ -415,7 +418,7 @@ Dav.prototype = {
 
     rmact : function (callback) {
         var self = this;
-        self.DELETE(self.act + self.uniqueKey,
+        self.DELETE([self.act, self.uniqueKey],
                     function (stat, statstr, cont) {
             callback && callback(stat, statstr, cont);
         });
