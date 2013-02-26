@@ -318,7 +318,7 @@ Dav.prototype = {
         });
     },
 
-    COPY : function (path, topath, ok, err) {
+    COPY : function (path, topath, ok) {
         var self = this;
         self.request({
             type: 'COPY',
@@ -329,7 +329,14 @@ Dav.prototype = {
                 'Authorization': self.auth
             },
             handler: function (stat, statstr, cont) {
-
+                if (stat >= 200 && stat < 300) {
+                    self.log('COPY ' + path + ' done!');
+                    ok && ok(stat, statstr, cont);
+                } else {
+                    self.log('COPY ' + path + ' fail', 1);
+                    self.log(stat + ' ' + statstr, 1);
+                    self.rmact();
+                }
             }
         });
     },

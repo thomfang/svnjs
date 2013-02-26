@@ -25,7 +25,7 @@ this.SVN.prototype = {
             params: [path]
         }, {
             method: 'COPY',
-            params: [path, topath]
+            params: [topath, path]
         });
     },
     lock: function () {
@@ -105,6 +105,8 @@ this.SVN.prototype = {
         });
         var url = self._getCheckoutUrl(method, params[0]);
         dav.CHECKOUT(url, function () {
+            if (method == 'COPY')
+                return self._prepareCopy(params);
             if (method == 'PROPPATCH')
                 params[0] = dav.co;
             else if (method == 'MKCOL')
@@ -112,11 +114,35 @@ this.SVN.prototype = {
             dav[method].apply(dav, params);
         });
     },
+    _prepareCopy: function (params) {
+        var self = this;
+        var dav = self.dav;
+        var path = params[1];
+        var success = params[2];
+        dav.PROPFIND(path, function () {
+            dav.PROPFIND(dav.vcc, function (stat, statstr, cont) {
+                var rbc = /:baseline-collection><D:href>([^<]+)<\/D/;
+                var rbr = /:baseline-ralative-path>([^<]+)<\//;
+                var topath = params[0];
+                topath = dav.co + '/' + (topath == './' ? '' : topath);
+                path = cont.match(rbc)[1] +
+                       cont.match(rbr)[1] + '/' + path;
+                dav.COPY(path, topath, success);
+            }//, ['<D:prop><D:baseline-collection xmlns="DAV:"/>',
+              //  '<D:version-name xmlns="DAV:"/></D:prop>'
+              // ].join('')
+            );
+        });
+    },
     _getCheckoutUrl: function (method, path) {
+        var dav = this.dav;
         var url = dav.ci;
+        if (path == './' && method == 'COPY')
+            return dav.ci;
         var pos = path.indexOf('/');
         if (method == 'PROPPATCH' || pos > -1)
             url += '/' + path;
+        return url;
     },
     _merge: function () {
         var dav = this.dav;

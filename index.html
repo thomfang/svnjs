@@ -14,10 +14,9 @@
     btn.onclick = function () {
         var passwd = prompt('Please input your password for "fon"');
         if (!passwd) return;
-        var svn = new SVN('fon', passwd, '/repos/webdav/trunk');
-        svn.rm('tpl');
-        svn.mkdir('test');
-        svn.commit('remove tpl add test dir');
+        var svn = new SVN('fon', passwd, '/svn/webdav/trunk');
+        svn.mv('123.js', 'test/');
+        svn.commit('mv 123.js to test/');
     };
   </script>
 </body>
