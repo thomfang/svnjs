@@ -1,5 +1,4 @@
-var Dav = function (auth, basepath, log) {
-    this.loginfo = log;
+var Dav = function (auth, basepath) {
     this.auth = 'Basic ' + auth;
     this.basepath = basepath;
 };
@@ -96,7 +95,7 @@ Dav.prototype = {
         throw new Error('Your browser not supported XMLHttpRequest');
     },
 
-    OPTIONS : function (ok, err) {
+    OPTIONS : function (ok) {
         var self = this;
         self.request({
             type: 'OPTIONS',
@@ -119,7 +118,6 @@ Dav.prototype = {
                     self.log('OPTIONS request fail', 1);
                     self.log(stat + ' ' + statstr, 1);
                     self.log('OPTIONS INFO END', 1);
-                    err && err(stat, statstr, cont);
                 }
             },
             content: [
@@ -131,7 +129,7 @@ Dav.prototype = {
         });
     },
 
-    PROPFIND : function (path, handler) {
+    PROPFIND : function (path, handler, prop) {
         var self = this;
         self.request({
             type: 'PROPFIND',
@@ -142,7 +140,8 @@ Dav.prototype = {
             },
             content: [
                 '<?xml version="1.0" encoding="utf-8"?>',
-                '<D:propfind xmlns:D="DAV:"><D:allprop />',
+                '<D:propfind xmlns:D="DAV:">',
+                prop ? prop : '<D:allprop />',
                 '</D:propfind>'
             ].join(''),
             handler: function (stat, statstr, cont) {
@@ -167,7 +166,7 @@ Dav.prototype = {
         });
     },
 
-    MKACTIVITY : function (ok, err) {
+    MKACTIVITY : function (ok) {
         var self = this;
         self.request({
             type: 'MKACTIVITY',
@@ -184,13 +183,12 @@ Dav.prototype = {
                 } else {
                     self.log('MKACTIVITY request fail', 1);
                     self.log(stat + ' ' + statstr, 1);
-                    err && err(stat, statstr, cont);
                 }
             }
         });
     },
 
-    CHECKOUT : function (path, ok, err) {
+    CHECKOUT : function (path, ok) {
         var self = this;
         var actpath = self.act + self.uniqueKey;
         self.request({
@@ -217,17 +215,17 @@ Dav.prototype = {
                     self.log(stat + ' ' + statstr, 1);
                     self.log('CHECKOUT INFO END');
                     self.rmact();
-                    err && err(stat, statstr, cont);
                 }
             }
         });
     },
 
-    PROPPATCH : function (ok, err) {
+    PROPPATCH : function (path, props, ok) {
         var self = this;
+        var props = self._getProppatchXML(props.set, props.del);
         self.request({
             type: 'PROPPATCH',
-            path: self.co,
+            path: path,
             headers: {
                 'Content-type': 'text/xml;charset=utf-8',
                 'Authorization': self.auth
@@ -238,9 +236,8 @@ Dav.prototype = {
                 ' xmlns:V="http://subversion.tigris.org/xmlns/dav/"',
                 ' xmlns:C="http://subversion.tigris.org/xmlns/custom/"', 
                 ' xmlns:S="http://subversion.tigris.org/xmlns/svn/">',
-                '<D:set><D:prop>',
-                '<S:log >', self.loginfo, '</S:log>',
-                '</D:prop></D:set></D:propertyupdate>'
+                props,
+                '</D:propertyupdate>'
             ].join(''),
             handler: function (stat, statstr, cont) {
                 if (stat == '207') {
@@ -251,13 +248,12 @@ Dav.prototype = {
                     self.log(stat + ' ' + statstr, 1);
                     self.log('PROPPATCH INFO END', 1);
                     self.rmact();
-                    err && err(stat, statstr, cont);
                 }
             }
         });
     },
 
-    PUT : function (file, content, ok, err) {
+    PUT : function (file, content, ok) {
         var self = this;
         var path = self.co + '/' + file;
         self.request({
@@ -277,13 +273,12 @@ Dav.prototype = {
                     self.log(stat + ' ' + statstr, 1);
                     self.log('PUT INFO END', 1);
                     self.rmact();
-                    err && err(stat, statstr, cont);
                 }
             }
         });
     },
 
-    DELETE : function (file, ok, err) {
+    DELETE : function (file, ok) {
         var self = this;
         var path = typeof file == 'string' ? self.co + '/' + file :
                                              file.join('');
@@ -302,7 +297,6 @@ Dav.prototype = {
                     self.log('DELETE ' + path + ' fail', 1);
                     self.log(stat + ' ' + statstr, 1);
                     self.log('DELETE INFO END', 1);
-                    err && err(stat, statstr, cont);
                 }
             }
         });
@@ -340,7 +334,7 @@ Dav.prototype = {
         });
     },
 
-    MKCOL : function () {
+    MKCOL : function (path, ok) {
         var self = this;
         self.request({
             type: 'MKCOL',
@@ -349,7 +343,13 @@ Dav.prototype = {
                 'Authorization': self.auth
             },
             handler: function (stat, statstr, cont) {
-
+                if (stat >= 200 && stat < 300) {
+                    self.log('MKCOL ' + path + ' done!');
+                    ok && ok(stat, statstr, cont);
+                } else {
+                    self.log('MKCOL ' + path + ' fail.', 1);
+                    self.rmact();
+                }
             }
         });
     },
@@ -461,6 +461,31 @@ Dav.prototype = {
             date.getMinutes(),
             date.getSeconds()
         ].join(':');
+    },
+    _getProppatchXML: function (propset, propdel) {
+        var xml = [];
+        if (propset) {
+            xml.push('<D:set>');
+            for (var ns in propset)
+                xml.push(
+                    '<D:prop>',
+                    '<S:', ns, ' >', propset[ns],
+                    '</S:', ns, '>',
+                    '</D:prop>'
+                );
+            xml.push('</D:set>');
+        }
+        if (propdel) {
+            xml.push('<D:remove>');
+            for (var i = 0, ns; ns = propdel[i]; i++)
+                xml.push(
+                    '<D:prop>',
+                    '<S:', ns, ' />',
+                    '</D:prop>'
+                );
+            xml.push('</D:remove>');
+        }
+        return xml.join('');
     }
 };
 

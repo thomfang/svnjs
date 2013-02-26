@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset='utf-8' />
-  <title> davjs -- by Fon </title>
+  <title> HOME PAGE </title>
 </head>
 
 <body>
@@ -12,18 +12,12 @@
   <script type='text/javascript'>
     var btn = document.getElementById('btn');
     btn.onclick = function () {
-      var auth = btoa('fon:123456');
-      var handlers = [{
-          'method': 'DELETE',
-          'params': ['123.js']
-      }];
-
-      svn({
-          auth: auth,
-          basepath: '/svn/webdav/trunk',
-          loginfo: 'add 123.js',
-          handlers: handlers
-      });
+        var passwd = prompt('Please input your password for "fon"');
+        if (!passwd) return;
+        var svn = new SVN('fon', passwd, '/repos/webdav/trunk');
+        svn.rm('tpl');
+        svn.mkdir('test');
+        svn.commit('remove tpl add test dir');
     };
   </script>
 </body>
