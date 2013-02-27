@@ -115,8 +115,8 @@ this.SVN.prototype = {
         var success = params[2];
         dav.PROPFIND(path, function () {
             dav.PROPFIND(dav.vcc, function (stat, statstr, cont) {
-                var rbc = /:baseline-collection><D:href>([^<]+)<\/D/;
-                var rbr = /:baseline-ralative-path>([^<]+)<\//;
+                var rbc = self.reg.blc;
+                var rbr = self.reg.blr;
                 var topath = params[0];
                 topath = dav.cko + '/' + (topath == './' ? '' : topath);
                 path = cont.match(rbc)[1] +

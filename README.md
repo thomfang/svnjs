@@ -13,6 +13,7 @@ The lib supports follow SVN operations:
 * svn mkdir
 * svn ps (propset, pset)
 * svn pd (propdel, pdel)
+* svn ci (commit)
 
 
 *API*
@@ -80,6 +81,12 @@ The lib supports follow SVN operations:
     <td>dir_name</td>
     <td>string</td>
     <td>directory name</td>
+  </tr>
+  <tr>
+    <td>commit</td>
+    <td>summary</td>
+    <td>string</td>
+    <td>commit summary</td>
   </tr>
 </table>
 
