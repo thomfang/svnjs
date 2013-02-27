@@ -13,7 +13,6 @@ The lib supports follow SVN operations:
 * svn mkdir
 * svn ps (propset, pset)
 * svn pd (propdel, pdel)
-* svn up (update)
 
 
 *API*
