@@ -89,7 +89,11 @@ The lib supports follow SVN operations:
       <p>success_callback</p>
       <p>fail_callback</p>
     </td>
-    <td>string</td>
+    <td>
+      <p>string</p>
+      <p>function</p>
+      <p>function</p>
+    </td>
     <td>
       <p>commit summary</p>
       <p>function callback after all requests success</p>
