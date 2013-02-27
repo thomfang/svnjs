@@ -145,25 +145,32 @@ Dav.prototype = {
                 '</D:propfind>'
             ].join(''),
             handler: function (stat, statstr, cont) {
-                self.log('PROPFIND request');
-                self.log(stat + ' ' + statstr);
-                
-                if (stat == '207') {
-                    var rvcc = new RegExp([
-                        'version-controlled-configuration>',
-                        '<D:href>([^<]+)<\\/D:href>'
-                    ].join(''));
-                    var rci = new RegExp(
-                        ':checked-in><D:href>([^<]+)<\\/D:href>');
-                    self.vcc = cont.match(rvcc)[1];
-                    self.ci = cont.match(rci)[1];
-                    self.log('checked-in: ' + self.ci);
-                    self.log('version-conctrolled-configuratoin: ' + self.vcc);
-                }
+                self.log('PROPFIND ' + path + ':' + stat + ' ' + statstr);
+                if (stat == '207')
+                    self._parseResponse(cont);
                 handler(stat, statstr, cont);
-                self.log('##### PROPFIND INFO END #####');
             }
         });
+    },
+
+    _parseResponse: function (txt) {
+        var self = this;
+        var re = {
+            'vcc': new RegExp(['version-controlled-configuration>',
+                               '<D:href>([^<]+)<\\/D:href>'
+                              ].join('')
+            ),
+            'cki': /:checked-in><D:href>([^<]+)<\/D:href>/,
+            'cko': /<\w+>(Checked-out [^<]+)<\/\w+>/,
+            'blc': /:baseline-collection><D:href>([^<]+)<\/D/,
+            'blr': /:baseline-ralative-path>([^<]+)<\//
+        };
+        for (var prop in re) {
+            var r = re[prop];
+            var match = txt.match(r);
+            if (match)
+                self[prop] = match[1];
+        }
     },
 
     MKACTIVITY : function (ok) {
@@ -202,13 +209,8 @@ Dav.prototype = {
             ].join(''),
             handler: function (stat, statstr, cont) {
                 if (stat == '201') {
-                    self.log('CHECKOUT ' + path + ' success');
-                    var rco = /<\w+>(Checked-out [^<]+)<\/\w+>/;
-                    var info = cont.match(rco)[1];
-                    self.co = info.replace(/^Checked-out resource /, '')
-                                   .replace(/ has been created\.$/, '');
-                    self.log(info);
-                    self.log('CHECKOUT INFO END');
+                    self.log('CHECKOUT ' + path + ' done!');
+                    self._parseResponse(cont);
                     ok && ok(stat, statstr, cont);
                 } else {
                     self.log('CHECKOUT ' + path + ' fail', 1);
@@ -255,7 +257,7 @@ Dav.prototype = {
 
     PUT : function (file, content, ok) {
         var self = this;
-        var path = self.co + '/' + file;
+        var path = self.cko + '/' + file;
         self.request({
             type: 'PUT',
             path: path,
@@ -280,7 +282,7 @@ Dav.prototype = {
 
     DELETE : function (file, ok) {
         var self = this;
-        var path = typeof file == 'string' ? self.co + '/' + file :
+        var path = typeof file == 'string' ? self.cko + '/' + file :
                                              file.join('');
         self.request({
             type: 'DELETE',

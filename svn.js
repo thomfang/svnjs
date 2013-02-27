@@ -17,22 +17,16 @@ this.SVN.prototype = {
         });
     },
     copy: function (path, topath) {
-
+        // todo copy
     },
     move: function (path, topath) {
-        this.handlers.push({
-            method: 'DELETE',
-            params: [path]
-        }, {
-            method: 'COPY',
-            params: [topath, path]
-        });
+        // todo move
     },
     lock: function () {
-
+        // todo lock
     },
     unlock: function () {
-
+        // todo unlock
     },
     mkdir: function (name) {
         this.handlers.push({
@@ -83,7 +77,7 @@ this.SVN.prototype = {
         var self = this;
         var dav = self.dav;
         var message = self.message;
-        dav.PROPPATCH(dav.co, {
+        dav.PROPPATCH(dav.cko, {
             set: {
                 log: message
             }
@@ -108,9 +102,9 @@ this.SVN.prototype = {
             if (method == 'COPY')
                 return self._prepareCopy(params);
             if (method == 'PROPPATCH')
-                params[0] = dav.co;
+                params[0] = dav.cko;
             else if (method == 'MKCOL')
-                params[0] = dav.co + '/' + params[0];
+                params[0] = dav.cko + '/' + params[0];
             dav[method].apply(dav, params);
         });
     },
@@ -124,7 +118,7 @@ this.SVN.prototype = {
                 var rbc = /:baseline-collection><D:href>([^<]+)<\/D/;
                 var rbr = /:baseline-ralative-path>([^<]+)<\//;
                 var topath = params[0];
-                topath = dav.co + '/' + (topath == './' ? '' : topath);
+                topath = dav.cko + '/' + (topath == './' ? '' : topath);
                 path = cont.match(rbc)[1] +
                        cont.match(rbr)[1] + '/' + path;
                 dav.COPY(path, topath, success);
@@ -136,9 +130,9 @@ this.SVN.prototype = {
     },
     _getCheckoutUrl: function (method, path) {
         var dav = this.dav;
-        var url = dav.ci;
+        var url = dav.cki;
         if (path == './' && method == 'COPY')
-            return dav.ci;
+            return dav.cki;
         var pos = path.indexOf('/');
         if (method == 'PROPPATCH' || pos > -1)
             url += '/' + path;
