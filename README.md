@@ -28,19 +28,16 @@ The lib supports follow SVN operations:
   <tr>
     <td>add</td>
     <td>
-      <p>usname</p>
-      <p>passwd</p>
-      <p>basepath</p>
+      <p>file</p>
+      <p>content</p>
     </td>
     <td>
       <p>string</p>
       <p>string</p>
-      <p>string</p>
     </td>
     <td>
-      <p>svn username</p>
-      <p>svn password</p>
-      <P>base path to request</p>
+      <p>the file to add</p>
+      <p>text write into the file</p>
     </td>
   </tr>
   <tr>
