@@ -82,12 +82,6 @@ The lib supports follow SVN operations:
     <td>string</td>
     <td>directory name</td>
   </tr>
-  <tr>
-    <td>update</td>
-    <td>none</td>
-    <td>null</td>
-    <td>to update the svn version</td>
-  </tr>
 </table>
 
 Example:
@@ -111,4 +105,4 @@ Example:
     The request won't be sent.
 
 Future will continue to support more operation command,
-like move, copy, revert, lock, unlock.
+like move, copy, lock, unlock.

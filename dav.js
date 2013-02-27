@@ -155,22 +155,23 @@ Dav.prototype = {
 
     _parseResponse: function (txt) {
         var self = this;
-        var re = {
-            'vcc': new RegExp(['version-controlled-configuration>',
-                               '<D:href>([^<]+)<\\/D:href>'
-                              ].join('')
-            ),
-            'cki': /:checked-in><D:href>([^<]+)<\/D:href>/,
-            'cko': /<\w+>(Checked-out [^<]+)<\/\w+>/,
-            'blc': /:baseline-collection><D:href>([^<]+)<\/D/,
-            'blr': /:baseline-ralative-path>([^<]+)<\//
-        };
+        var re = self.reg;
         for (var prop in re) {
             var r = re[prop];
             var match = txt.match(r);
             if (match)
                 self[prop] = match[1];
         }
+    },
+    
+    reg: {
+        'vcc': new RegExp([
+            'version-controlled-configuration>',
+            '<D:href>([^<]+)<\\/D:href>'].join('')),
+        'cki': /:checked-in><D:href>([^<]+)<\/D:href>/,
+        'cko': /<\w+>Checked-out resource (\S+) has been created/,
+        'blc': /:baseline-collection><D:href>([^<]+)<\/D/,
+        'blr': /:baseline-ralative-path>([^<]+)<\//
     },
 
     MKACTIVITY : function (ok) {
