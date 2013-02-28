@@ -23,7 +23,7 @@ The lib supports follow SVN operations:
     <th>name</th>
     <th>param</th>
     <th>type</th>
-    <th>explain</th>
+    <th>description</th>
   </tr>
   <tr>
     <td>add</td>
