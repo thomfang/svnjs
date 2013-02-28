@@ -1,6 +1,6 @@
-var Dav = function (auth, basepath) {
+var Dav = function (auth, base) {
     this.auth = 'Basic ' + auth;
-    this.basepath = basepath;
+    this.base = base;
 };
 
 var STATUS_CODES = {
@@ -95,11 +95,11 @@ Dav.prototype = {
         throw new Error('Your browser not supported XMLHttpRequest');
     },
 
-    OPTIONS : function (ok) {
+    OPTIONS : function (ok, err) {
         var self = this;
         self.request({
             type: 'OPTIONS',
-            path: this.basepath,
+            path: this.base,
             headers: {
                 'Content-type': 'text/xml;charset=utf-8'
             },
@@ -118,6 +118,7 @@ Dav.prototype = {
                     self.log('OPTIONS request fail', 1);
                     self.log(stat + ' ' + statstr, 1);
                     self.log('OPTIONS INFO END', 1);
+                    err && err();
                 }
             },
             content: [
@@ -165,16 +166,17 @@ Dav.prototype = {
     },
     
     reg: {
-        'vcc': new RegExp([
-            'version-controlled-configuration>',
-            '<D:href>([^<]+)<\\/D:href>'].join('')),
+        'vcc': new RegExp(['version-controlled-configuration>',
+                               '<D:href>([^<]+)<\\/D:href>'
+                              ].join('')
+        ),
         'cki': /:checked-in><D:href>([^<]+)<\/D:href>/,
         'cko': /<\w+>Checked-out resource (\S+) has been created/,
         'blc': /:baseline-collection><D:href>([^<]+)<\/D/,
         'blr': /:baseline-ralative-path>([^<]+)<\//
     },
 
-    MKACTIVITY : function (ok) {
+    MKACTIVITY : function (ok, err) {
         var self = this;
         self.request({
             type: 'MKACTIVITY',
@@ -191,12 +193,13 @@ Dav.prototype = {
                 } else {
                     self.log('MKACTIVITY request fail', 1);
                     self.log(stat + ' ' + statstr, 1);
+                    err && err();
                 }
             }
         });
     },
 
-    CHECKOUT : function (path, ok) {
+    CHECKOUT : function (path, ok, err) {
         var self = this;
         var actpath = self.act + self.uniqueKey;
         self.request({
@@ -223,7 +226,7 @@ Dav.prototype = {
         });
     },
 
-    PROPPATCH : function (path, props, ok) {
+    PROPPATCH : function (path, props, ok, err) {
         var self = this;
         var props = self._getProppatchXML(props.set, props.del);
         self.request({
@@ -251,14 +254,16 @@ Dav.prototype = {
                     self.log(stat + ' ' + statstr, 1);
                     self.log('PROPPATCH INFO END', 1);
                     self.rmact();
+                    err && err();
                 }
             }
         });
     },
 
-    PUT : function (file, content, ok) {
+    PUT : function (file, content, ok, err) {
         var self = this;
-        var path = self.cko + '/' + file;
+        var path = self.cko.indexOf(file) ? self.cko :
+                                            self.cko + '/' + file;
         self.request({
             type: 'PUT',
             path: path,
@@ -276,12 +281,13 @@ Dav.prototype = {
                     self.log(stat + ' ' + statstr, 1);
                     self.log('PUT INFO END', 1);
                     self.rmact();
+                    err && err();
                 }
             }
         });
     },
 
-    DELETE : function (file, ok) {
+    DELETE : function (file, ok, err) {
         var self = this;
         var path = typeof file == 'string' ? self.cko + '/' + file :
                                              file.join('');
@@ -292,14 +298,14 @@ Dav.prototype = {
                 'Authorization': self.auth
             },
             handler: function (stat, statstr, cont) {
-                if (stat == '204') {
+                if (stat >= 200 && stat < 300) {
                     self.log('DELETE ' + path + ' done');
                     ok && ok(stat, statstr, cont);
                 } else {
-                    var loginfo = {};
                     self.log('DELETE ' + path + ' fail', 1);
                     self.log(stat + ' ' + statstr, 1);
                     self.log('DELETE INFO END', 1);
+                    err && err();
                 }
             }
         });
@@ -344,7 +350,7 @@ Dav.prototype = {
         });
     },
 
-    MKCOL : function (path, ok) {
+    MKCOL : function (path, ok, err) {
         var self = this;
         self.request({
             type: 'MKCOL',
@@ -359,6 +365,7 @@ Dav.prototype = {
                 } else {
                     self.log('MKCOL ' + path + ' fail.', 1);
                     self.rmact();
+                    err && err();
                 }
             }
         });
@@ -415,7 +422,6 @@ Dav.prototype = {
                     self.log('MERGE done');
                     self.rmact(ok);
                 } else {
-                    var loginfo = {};
                     self.log('MERGE fail',  1);
                     self.log(stat + ' ' + statstr, 1);
                     self.log('##### MERGE INFO END', 1);
@@ -497,10 +503,6 @@ Dav.prototype = {
         }
         return xml.join('');
     }
-};
-
-Dav.showLog = function () {
-    Dav.console.style.display = 'block';
 };
 
 !function () {

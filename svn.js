@@ -50,19 +50,24 @@ this.SVN.prototype = {
             ]
         });
     },
-    commit: function (message) {
+    commit: function (message, ok, err) {
         var self = this;
         var dav = self.dav;
-        self.message = message || 'update';
+        self.message = message;
+        self.ok = ok;
+        self.err = err;
         dav.log('================================================');
         dav.OPTIONS(function () {
-            dav.PROPFIND(dav.basepath, function (stat) {
+            dav.PROPFIND(dav.base, function (stat) {
                 if (stat == '207')
                     self._mkAct();
                 else
-                    dav.log('Error at step PROPFIND', 1);
+                    self.err && self.err();
             });
         });
+    },
+    log: function () {
+        Dav.console.style.display = 'block';
     },
     _mkAct: function () {
         var self = this;
@@ -70,7 +75,11 @@ this.SVN.prototype = {
         dav.MKACTIVITY(function () {
             dav.CHECKOUT(dav.vcc, function () {
                 self._patchLog();
+            }, function () {
+                self.err && self.err();
             });
+        }, function () {
+            self.err && self.err();
         });
     },
     _patchLog: function () {
@@ -83,6 +92,8 @@ this.SVN.prototype = {
             }
         }, function () {
             self._process();
+        }, function () {
+            self.err && self.err();
         });
     },
     _process: function () {
@@ -96,6 +107,8 @@ this.SVN.prototype = {
                 self._process();
             else
                 self._merge();
+        }, function () {
+            self.err && self.err();
         });
         var url = self._getCheckoutUrl(method, params[0]);
         dav.CHECKOUT(url, function () {
@@ -106,6 +119,8 @@ this.SVN.prototype = {
             else if (method == 'MKCOL')
                 params[0] = dav.cko + '/' + params[0];
             dav[method].apply(dav, params);
+        }, function () {
+            self.err && self.err();
         });
     },
     _prepareCopy: function (params) {
@@ -115,8 +130,8 @@ this.SVN.prototype = {
         var success = params[2];
         dav.PROPFIND(path, function () {
             dav.PROPFIND(dav.vcc, function (stat, statstr, cont) {
-                var rbc = self.reg.blc;
-                var rbr = self.reg.blr;
+                var rbc = /:baseline-collection><D:href>([^<]+)<\/D/;
+                var rbr = /:baseline-ralative-path>([^<]+)<\//;
                 var topath = params[0];
                 topath = dav.cko + '/' + (topath == './' ? '' : topath);
                 path = cont.match(rbc)[1] +
@@ -139,10 +154,14 @@ this.SVN.prototype = {
         return url;
     },
     _merge: function () {
-        var dav = this.dav;
+        var self = this;
+        var dav = self.dav;
         dav.MERGE(function () {
             dav.log('ALL DONE!');
             dav.log('================================================');
+            self.ok && self.ok();
+        }, function () {
+            self.err && self.err();
         });
     }
 };
