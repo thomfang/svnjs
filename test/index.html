@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset='utf-8' />
+  <title> HOME PAGE </title>
+</head>
+
+<body>
+  <button type='button' id='btn'>test</button>
+  <script type='text/javascript' src='../src/namespace.js'></script>
+  <script type='text/javascript' src='../src/status.js'></script>
+  <script type='text/javascript' src='../src/util.js'></script>
+  <script type='text/javascript' src='../src/webdav.js'></script>
+  <script type='text/javascript' src='../src/svnclient.js'></script>
+  <script type='text/javascript'>
+
+    var btn = document.getElementById('btn');
+
+    /* version: 0.2.0 */
+
+    btn.onclick = function () {
+        var passwd = prompt("Please input your password for 'fon'");
+        if (!passwd) {
+            return;
+        }
+        var svn = new svnjs.Client("fon", passwd, "/svn/webdav/trunk");
+        svn.mv("123.js", "test/");
+        svn.propset("123.js", {
+            "svn:mime-type": "text/javascript"
+        });
+        svn.commit("Move 123.js to test/")
+           .done(function () {
+                console.log("Move done");
+           })
+           .fail(function () {
+                console.log("Move fail");
+           });
+    };
+
+    /* version: 0.1.0 */
+    /*
+    btn.onclick = function () {
+        var passwd = prompt('Please input your password for "fon"');
+        if (!passwd) return;
+        var svn = new SVN('fon', passwd, '/svn/webdav/trunk');
+        svn.mv('123.js', 'test/');
+        svn.commit('mv 123.js to test/');
+    };
+    */
+  </script>
+</body>
+</html>

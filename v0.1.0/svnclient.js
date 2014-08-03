@@ -1,3 +1,6 @@
+/* Copyright (C) Todd Fon(tilfon@live.com). All Rights Reserved.
+ */
+
 this.SVN = function (usname, passwd, base) {
     var auth = btoa(usname + ':' + passwd);
     this.dav = new Dav(auth, base);

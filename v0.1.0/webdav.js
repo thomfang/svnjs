@@ -1,3 +1,6 @@
+/* Copyright (C) Todd Fon(tilfon@live.com). All Rights Reserved.
+ */
+
 var Dav = function (auth, base) {
     this.auth = 'Basic ' + auth;
     this.base = base;
