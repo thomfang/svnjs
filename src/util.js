@@ -17,7 +17,7 @@
     svnjs.fmt = function fmt(f) {
         var args = arguments;
         var len = args.length;
-        if (args.length <= 1) {
+        if (len <= 1) {
             return String(f);
         }
         var i = 1;
@@ -41,7 +41,7 @@
         return str;
     };
 
-    // Ajax util, get xmlhttp request
+    // Get xml http request
     var getxhr = function () {
         if ("undefined" !== typeof XMLHttpRequest) {
             return function () {
@@ -56,6 +56,7 @@
         throw "Browser not support XMLHTTP.";
     }();
 
+    // Ajax util
     svnjs.ajax = function (options) {
         var xhr = getxhr();
         xhr.onreadystatechange = function () {
@@ -132,8 +133,10 @@
         );
     }
 
-    svnjs.encrypt = function (str) {
-        return typeof(btoa) !== "undefined" ? btoa(str) : str;
+    // Authorization encrypt
+    svnjs.encrypt = function (usname, passwd) {
+        var str = usname + ":" + passwd;
+        return typeof(btoa) !== "undefined" ? "Basic " + btoa(str) : str;
     };
 
     

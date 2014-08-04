@@ -13,7 +13,7 @@
             throw new Error("new svnjs.Client: args required 3");
         }
 
-        var auth = svnjs.encrypt(username + ":" + password);
+        var auth = svnjs.encrypt(username, password);
         this._webdav   = new svnjs.WebDav(auth, base_url);
         this._baseurl  = base_url;
         this._handlers = [];
@@ -203,12 +203,9 @@
         var path = params[1];
         
         function onPropfindOk(stat, ststr, text) {
-            var re_baseline_col_path = /:baseline-collection><D:href>([^<]+)<\/D/;
-            var re_baseline_rel_path = /:baseline-ralative-path>([^<]+)<\//;
             var topath = params[0];
-
             topath = webdav.checked_out + "/" + (topath === "./" ? "" : topath);
-            path = text.match(re_baseline_col_path)[1] + text.match(re_baseline_rel_path)[1] + "/" + path;
+            path = webdav.baseline_collection + webdav.baseline_rel_path + "/" + path;
             webdav.copy(path, topath, params[2]);
         }
 

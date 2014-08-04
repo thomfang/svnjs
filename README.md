@@ -1,10 +1,11 @@
 svn_client_js
 =============
 
-A javascript lib use as a SVN client on web.
+A javascript lib use as a SVN client on web. Version 0.2.0 has difference namespace with version 0.1.0.
 
 -------------
 
+**Introduce**
 
 The lib supports follow SVN operations:
 
@@ -15,8 +16,58 @@ The lib supports follow SVN operations:
 * svn pd (propdel, pdel)
 * svn ci (commit)
 
+---
 
-*API*
+**Quick Start**
+
+1.  Generate an instance:
+
+	v0.1.0
+  
+  	```
+  	// usname: your SVN username
+    // passwd: your SVN password
+    
+  	var mysvn =  new SVN(usname, passwd, basepath);
+  	```
+       
+    v0.2.0
+    
+    ```
+    var mysvn = new svnjs.Client(usname, passwd, basepath);
+    ```
+    
+
+2.  Then do what you can & what you want, like:
+    
+    ```
+    mysvn.mkdir('my_dir');
+    mysvn.add('test.js', 'alert("done!");');
+    mysvn.propset('test.js', { 'mime-type': 'text/javscript' });
+    ```
+
+3.  The most important step:
+
+	v0.1.0
+  
+  	```
+  	mysvn.commit('Create a folder:my_dir and add a js file:test.js');
+  	```
+  	
+  	v0.2.0(support simple promise)
+  	
+  	```
+  	 mysvn.commit("Create a folder:my_dir and add a js file:test.js")  	
+  		.done(function () {console.log("done")})
+  		.fail(function () {console.log("fail")});
+  	```
+
+    If you do everything without this step,
+    The request won't be sent.
+
+---
+
+**API**
 
 <table>
   <tr>
@@ -102,25 +153,6 @@ The lib supports follow SVN operations:
   </tr>
 </table>
 
-Example:
-
-1.  Generate an instance:
-    > var mysvn =  new SVN(usname, passwd, basepath);
-       * usname: your SVN username
-       * passwd: your SVN password
-
-2.  Then do what you can & what you want, like:
-    > mysvn.mkdir('my_dir');
-
-    > mysvn.add('test.js', 'alert("done!");');
-
-    > mysvn.propset('test.js', { 'mime-type': 'text/javscript' });
-
-3.  The most important step:
-    > mysvn.commit('Create a folder:my_dir and add a js file:test.js');
-
-    If you do everything without this step,
-    The request won't be sent.
 
 Future will continue to support more operation command,
 like move, copy, lock, unlock.

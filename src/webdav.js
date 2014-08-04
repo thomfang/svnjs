@@ -21,7 +21,7 @@
     };
 
     svnjs.WebDav = function WebDav(auth, base) {
-        this._auth = "Basic " + auth;
+        this._auth = auth;
         this._base = base; // base url
 
         this.activity = null;
