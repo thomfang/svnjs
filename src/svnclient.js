@@ -184,7 +184,7 @@
         params.push(onOk);
         params.push(onErr);
 
-        webdav.checkout(this._getCheckoutUrl(method, params[0]), onCheckoutOk, onErr));
+        webdav.checkout(this._getCheckoutUrl(method, params[0]), onCheckoutOk, onErr);
     };
 
     svnjs.Client.prototype._getCheckoutUrl = function (method, path) {
