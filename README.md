@@ -1,4 +1,4 @@
-svn_client_js
+svnjs
 =============
 
 A javascript lib use as a SVN client on web. Version 0.2.0 has difference namespace with version 0.1.0.
