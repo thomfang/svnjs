@@ -1,8 +1,7 @@
 svn_client_js
 =============
 
-A javascript lib use as a SVN client on web. Version 0.2.0 has difference namespace with version 0.1.0.
-
+A javascript lib use as a SVN client on web.
 -------------
 
 **Introduce**
@@ -20,18 +19,7 @@ The lib supports follow SVN operations:
 
 **Quick Start**
 
-1.  Generate an instance:
-
-	v0.1.0
-  
-  	```
-  	// usname: your SVN username
-    // passwd: your SVN password
-    
-  	var mysvn =  new SVN(usname, passwd, basepath);
-  	```
-       
-    v0.2.0
+1.  Generate an instance:   
     
     ```
     var mysvn = new svnjs.Client(usname, passwd, basepath);
@@ -47,14 +35,6 @@ The lib supports follow SVN operations:
     ```
 
 3.  The most important step:
-
-	v0.1.0
-  
-  	```
-  	mysvn.commit('Create a folder:my_dir and add a js file:test.js');
-  	```
-  	
-  	v0.2.0(support simple promise)
   	
   	```
   	 mysvn.commit("Create a folder:my_dir and add a js file:test.js")  	
